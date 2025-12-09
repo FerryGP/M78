@@ -162,16 +162,31 @@
         // 这模拟了我们将视场稍微放大的效果。
         const XY_SCALE = 30; 
         
+        // 坐标修正说明：
+        // 摄像机从 -Z 位置看向 +Z 位置时，Canvas 右侧为 -X，左侧为 +X。
+        // 为了匹配北半球观看南天的体验（左东右西）：
+        // - 参宿四（左肩/东）：需要 Positive X
+        // - 参宿五（右肩/西）：需要 Negative X
+        // - 参宿一（左腰带/东）：需要 Positive X
+        // - 参宿三（右腰带/西）：需要 Negative X
+        
         const starData = [
-            { id: 'betelgeuse', name: "参宿四 (Betelgeuse)", color: 0xff4500, size: 6, x: -2, y: 4, z: 640 },
-            { id: 'bellatrix', name: "参宿五 (Bellatrix)", color: 0xadd8e6, size: 4, x: 2, y: 4, z: 250 },
-            // 修复：参宿七这里之前缺少了 y: 键名，导致语法错误
-            { id: 'rigel', name: "参宿七 (Rigel)", color: 0xaaaaff, size: 7, x: 2, y: -4, z: 860 }, 
-            { id: 'saiph', name: "参宿六 (Saiph)", color: 0xadd8e6, size: 4, x: -2, y: -4, z: 720 },
-            { id: 'mintaka', name: "腰带一 (Mintaka)", color: 0x00bfff, size: 3.5, x: -0.5, y: 0, z: 800 },
-            { id: 'alnilam', name: "腰带二 (Alnilam)", color: 0x00bfff, size: 3.5, x: 0, y: 0, z: 1340 },
-            { id: 'alnitak', name: "腰带三 (Alnitak)", color: 0x00bfff, size: 3.5, x: 0.5, y: 0, z: 915 },
-            { id: 'm78', name: "M78 星云", type: "nebula", color: 0xff00ff, size: 15, x: -0.8, y: 0.5, z: 1600 }
+            // Betelgeuse: 左上角 (红色) -> X 正
+            { id: 'betelgeuse', name: "参宿四 (Betelgeuse)", color: 0xff4500, size: 6, x: 2, y: 4, z: 640 },
+            // Bellatrix: 右上角 (蓝色) -> X 负
+            { id: 'bellatrix', name: "参宿五 (Bellatrix)", color: 0xadd8e6, size: 4, x: -2, y: 4, z: 250 },
+            // Rigel: 右下角 (蓝色) -> X 负
+            { id: 'rigel', name: "参宿七 (Rigel)", color: 0xaaaaff, size: 7, x: -2, y: -4, z: 860 }, 
+            // Saiph: 左下角 (蓝色) -> X 正
+            { id: 'saiph', name: "参宿六 (Saiph)", color: 0xadd8e6, size: 4, x: 2, y: -4, z: 720 },
+            // Mintaka: 右腰带 (西/右) -> X 负. 修正名称为 参宿三
+            { id: 'mintaka', name: "参宿三 (Mintaka)", color: 0x00bfff, size: 3.5, x: -0.5, y: 0, z: 800 },
+            // Alnilam: 中腰带 -> X 0. 修正名称为 参宿二
+            { id: 'alnilam', name: "参宿二 (Alnilam)", color: 0x00bfff, size: 3.5, x: 0, y: 0, z: 1340 },
+            // Alnitak: 左腰带 (东/左) -> X 正. 修正名称为 参宿一
+            { id: 'alnitak', name: "参宿一 (Alnitak)", color: 0x00bfff, size: 3.5, x: 0.5, y: 0, z: 915 },
+            // M78: 位于参宿一上方附近 (左侧) -> X 正
+            { id: 'm78', name: "M78 星云", type: "nebula", color: 0xff00ff, size: 15, x: 0.8, y: 0.5, z: 1600 }
         ];
 
         // 修正数据格式并应用缩放
@@ -183,15 +198,17 @@
         }));
 
         // 连线定义 (索引对应上述数组)
+        // 0: Betelgeuse (左), 1: Bellatrix (右), 2: Rigel (右), 3: Saiph (左)
+        // 4: Mintaka (右/参宿三), 5: Alnilam (中), 6: Alnitak (左/参宿一)
         const connections = [
-            [0, 4], // 参宿四 -> 腰带一 (肩 -> 腰)
-            [1, 6], // 参宿五 -> 腰带三 (肩 -> 腰) - 视觉上看起来像连着
+            [0, 6], // 参宿四(左) -> 参宿一(左) (肩 -> 腰)
+            [1, 4], // 参宿五(右) -> 参宿三(右) (肩 -> 腰)
             [0, 1], // 参宿四 -> 参宿五 (肩 -> 肩)
-            [3, 4], // 参宿六 -> 腰带一 (脚 -> 腰)
-            [2, 6], // 参宿七 -> 腰带三 (脚 -> 腰)
+            [3, 6], // 参宿六(左) -> 参宿一(左) (脚 -> 腰)
+            [2, 4], // 参宿七(右) -> 参宿三(右) (脚 -> 腰)
             [3, 2], // 参宿六 -> 参宿七 (脚 -> 脚)
-            [4, 5], // 腰带 1-2
-            [5, 6]  // 腰带 2-3
+            [4, 5], // 腰带 右-中
+            [5, 6]  // 腰带 中-左
         ];
 
         // --- 2. Three.js 初始化 ---
