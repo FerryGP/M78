@@ -8,7 +8,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>M78星云与猎户座 3D 可视化演示 - 王原驰</title>
     <!-- 引入 Tailwind CSS 进行 UI 样式设计 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -55,14 +55,61 @@
             top: 20px;
             left: 20px;
             background: rgba(20, 20, 30, 0.9);
-            padding: 20px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             color: white;
             z-index: 10;
-            max-width: 300px;
+            width: 300px;
+            max-width: calc(100vw - 40px); /* 移动端防溢出 */
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 折叠状态样式 */
+        #controls-panel.collapsed {
+            width: auto;
+            min-width: 140px;
+            background: rgba(20, 20, 30, 0.6);
+        }
+
+        /* 面板头部（始终可见） */
+        .panel-header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+        
+        #controls-panel.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        
+        #controls-panel.collapsed .panel-header {
+            border-bottom: none;
+        }
+
+        /* 面板内容区域 */
+        .panel-content-wrapper {
+            padding: 20px;
+            padding-top: 15px;
+            transition: opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        #controls-panel.collapsed .panel-content-wrapper {
+            display: none;
+            opacity: 0;
         }
 
         .btn {
@@ -184,46 +231,62 @@
         </div>
     </div>
 
-    <!-- UI 控制面板 -->
+    <!-- UI 控制面板 (带折叠功能) -->
     <div id="controls-panel">
-        <h2 class="text-xl font-bold mb-2 text-blue-200">视角控制器</h2>
-        <p class="text-xs text-gray-400 mb-4">探索“鞋盒模型”原理：从地球看似平面，实则深度差异巨大。</p>
-        
-        <button class="btn" onclick="setEarthView()">
-            <span><span class="btn-icon">🌍</span>地球视角</span>
-            <span class="text-xs opacity-70">平面星座图</span>
-        </button>
-        
-        <button class="btn" onclick="setGodView()">
-            <span><span class="btn-icon">🛸</span>上帝视角</span>
-            <span class="text-xs opacity-70">侧面看深度</span>
-        </button>
-
-        <div class="mt-4 pt-4 border-t border-gray-700">
-            <div class="flex items-center text-xs text-gray-300 mb-2">
-                <div class="w-3 h-3 rounded-full bg-green-500 mr-2 shadow-[0_0_5px_#22c55e]"></div>
-                地球 (原点)
+        <!-- 标题栏 (点击可折叠) -->
+        <div class="panel-header" onclick="togglePanel()">
+            <div class="font-bold text-blue-200 flex items-center">
+                <span class="mr-2">⚙️</span> 控制面板
             </div>
-            <div class="flex items-center text-xs text-gray-300 mb-2">
-                <div class="w-3 h-3 rounded-full bg-blue-500 mr-2 shadow-[0_0_5px_#3b82f6]"></div>
-                恒星 (如参宿四)
-            </div>
-            <div class="flex items-center text-xs text-gray-300">
-                <div class="w-3 h-3 rounded-full bg-fuchsia-500 mr-2 shadow-[0_0_5px_#d946ef]"></div>
-                M78 星云 (最远)
-            </div>
-        </div>
-        
-        <div class="mt-4 text-xs text-gray-500 text-center border-b border-gray-700 pb-4 mb-4">
-            单击星体查看详情<br>
-            鼠标拖拽旋转 | 滚轮缩放
+            <div class="toggle-icon text-gray-400 text-sm">▼</div>
         </div>
 
-        <!-- 版权说明 -->
-        <div class="text-[10px] text-gray-400 text-center leading-relaxed">
-            该模型仅用于参加<br>
-            <span class="text-yellow-500 font-bold">第二十六届金鹏科技论坛</span><br>
-            三年级7班 王原驰 版权所有
+        <!-- 可折叠内容区 -->
+        <div class="panel-content-wrapper">
+            <!-- 新增的标题 -->
+            <h3 class="text-lg font-bold text-blue-100 mb-3 leading-tight border-b border-gray-700 pb-2">
+                M78星云与猎户座<br>
+                <span class="text-sm text-blue-300 font-normal">3D 可视化交互演示</span>
+            </h3>
+
+            <p class="text-xs text-gray-400 mb-4">探索“鞋盒模型”原理：从地球看似平面，实则深度差异巨大。</p>
+            
+            <button class="btn" onclick="setEarthView()">
+                <span><span class="btn-icon">🌍</span>地球视角</span>
+                <span class="text-xs opacity-70">平面星座图</span>
+            </button>
+            
+            <button class="btn" onclick="setGodView()">
+                <span><span class="btn-icon">🛸</span>上帝视角</span>
+                <span class="text-xs opacity-70">侧面看深度</span>
+            </button>
+
+            <div class="mt-4 pt-4 border-t border-gray-700">
+                <div class="flex items-center text-xs text-gray-300 mb-2">
+                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2 shadow-[0_0_5px_#22c55e]"></div>
+                    地球 (原点)
+                </div>
+                <div class="flex items-center text-xs text-gray-300 mb-2">
+                    <div class="w-3 h-3 rounded-full bg-blue-500 mr-2 shadow-[0_0_5px_#3b82f6]"></div>
+                    恒星 (如参宿四)
+                </div>
+                <div class="flex items-center text-xs text-gray-300">
+                    <div class="w-3 h-3 rounded-full bg-fuchsia-500 mr-2 shadow-[0_0_5px_#d946ef]"></div>
+                    M78 星云 (最远)
+                </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-gray-500 text-center border-b border-gray-700 pb-4 mb-4">
+                单击星体查看详情<br>
+                鼠标拖拽旋转 | 滚轮缩放
+            </div>
+
+            <!-- 版权说明 -->
+            <div class="text-[10px] text-gray-400 text-center leading-relaxed">
+                该模型仅用于参加<br>
+                <span class="text-yellow-500 font-bold">第二十六届金鹏科技论坛</span><br>
+                三年级7班 王原驰 版权所有
+            </div>
         </div>
     </div>
 
@@ -233,16 +296,8 @@
         const XY_SCALE = 30; 
         
         // 神舟飞船速度计算常数
-        // 1 光年 ≈ 9.46 万亿公里
-        // 神舟飞船速度（取第一宇宙速度） ≈ 7.9 km/s
-        // 计算结果：1 光年大约需要 3.8 万年
         const YEARS_PER_LY_SHENZHOU = 38000;
 
-        // 坐标修正说明：
-        // 摄像机从 -Z 位置看向 +Z 位置 (地球视角)
-        // Left (East) = +X
-        // Right (West) = -X
-        
         const starData = [
             // Betelgeuse
             { 
@@ -468,12 +523,23 @@
         scene.add(axisGroup);
 
 
-        // --- 5. 交互逻辑 (悬浮 + 点击) ---
+        // --- 5. 交互逻辑 (悬浮 + 点击 + 面板折叠) ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
         const modal = document.getElementById('detail-modal');
         const modalContent = document.getElementById('modal-content');
+        const controlsPanel = document.getElementById('controls-panel');
+
+        // 面板折叠功能
+        window.togglePanel = function() {
+            controlsPanel.classList.toggle('collapsed');
+        };
+
+        // 移动端初始化检测
+        if (window.innerWidth < 768) {
+            controlsPanel.classList.add('collapsed');
+        }
 
         // 关闭模态框
         window.closeModal = function() {
@@ -482,6 +548,7 @@
 
         // 鼠标移动检测
         function onMouseMove(event) {
+            // 在移动端，如果正在触摸操作，通常不显示 Tooltip，或者通过 click 触发
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -518,7 +585,6 @@
 
         function showDetails(data) {
             // 计算神舟飞船时间 (单位：年)
-            // 使用 toLocaleString 让数字更易读 (如 34,200,000)
             const shenzhouYears = (data.z * YEARS_PER_LY_SHENZHOU).toLocaleString();
 
             modalContent.innerHTML = `
@@ -546,6 +612,11 @@
 
         window.addEventListener('mousemove', onMouseMove, false);
         window.addEventListener('click', onClick, false);
+        // 添加触摸支持，确保移动端点击生效
+        window.addEventListener('touchstart', (e) => {
+             // 简单的触摸点击处理，防止与 OrbitControls 冲突过于复杂
+             // 这里主要依赖 OrbitControls 处理旋转，click 事件通常也会在 touchEnd 后触发
+        }, {passive: true});
 
 
         // --- 6. 视角控制 ---
@@ -590,10 +661,17 @@
 
         window.setEarthView = function() {
             moveCamera({ x: 0, y: 0, z: -300 }, { x: 0, y: 0, z: 800 });
+            // 移动端点击按钮后自动收起面板，方便查看效果
+            if (window.innerWidth < 768) {
+                controlsPanel.classList.add('collapsed');
+            }
         };
 
         window.setGodView = function() {
             moveCamera({ x: 2000, y: 500, z: 800 }, { x: 0, y: 0, z: 800 });
+            if (window.innerWidth < 768) {
+                controlsPanel.classList.add('collapsed');
+            }
         };
 
         // --- 7. 渲染循环 ---
