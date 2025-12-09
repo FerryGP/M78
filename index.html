@@ -523,7 +523,7 @@
         scene.add(axisGroup);
 
 
-        // --- 5. 交互逻辑 (悬浮 + 点击 + 面板折叠) ---
+        // --- 5. 交互逻辑 (智能点击判定) ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
@@ -536,43 +536,19 @@
             controlsPanel.classList.toggle('collapsed');
         };
 
-        // 移动端初始化检测
         if (window.innerWidth < 768) {
             controlsPanel.classList.add('collapsed');
         }
 
-        // 关闭模态框
         window.closeModal = function() {
             modal.classList.remove('active');
         };
 
-        // 鼠标移动检测
-        function onMouseMove(event) {
-            // 在移动端，如果正在触摸操作，通常不显示 Tooltip，或者通过 click 触发
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(starMeshes);
-
-            if (intersects.length > 0) {
-                const data = intersects[0].object.userData;
-                // 显示简易悬浮提示
-                tooltip.style.display = 'block';
-                tooltip.style.left = event.clientX + 15 + 'px';
-                tooltip.style.top = event.clientY + 15 + 'px';
-                tooltip.innerHTML = `<div>${data.name}</div><div style="color:#aaa">点击查看详情</div>`;
-                document.body.style.cursor = 'pointer';
-            } else {
-                tooltip.style.display = 'none';
-                document.body.style.cursor = 'default';
-            }
-        }
-        
-        // 鼠标点击检测 (新增)
-        function onClick(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        // 处理点击的通用函数
+        function handleClick(x, y) {
+            // 将屏幕坐标转换为标准设备坐标 (-1 到 +1)
+            mouse.x = (x / window.innerWidth) * 2 - 1;
+            mouse.y = -(y / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(starMeshes);
@@ -580,11 +556,63 @@
             if (intersects.length > 0) {
                 const data = intersects[0].object.userData;
                 showDetails(data);
+                return true; // 选中了物体
+            }
+            return false;
+        }
+
+        // 处理悬浮的通用函数
+        function handleHover(x, y) {
+            mouse.x = (x / window.innerWidth) * 2 - 1;
+            mouse.y = -(y / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(starMeshes);
+
+            if (intersects.length > 0) {
+                const data = intersects[0].object.userData;
+                tooltip.style.display = 'block';
+                tooltip.style.left = x + 15 + 'px';
+                tooltip.style.top = y + 15 + 'px';
+                tooltip.innerHTML = `<div>${data.name}</div><div style="color:#aaa">点击查看详情</div>`;
+                document.body.style.cursor = 'pointer';
+            } else {
+                tooltip.style.display = 'none';
+                document.body.style.cursor = 'default';
             }
         }
 
+        // --- 指针事件处理 (兼容鼠标和触摸) ---
+        let pointerDownX = 0;
+        let pointerDownY = 0;
+
+        // 1. 按下时记录坐标
+        window.addEventListener('pointerdown', (event) => {
+            pointerDownX = event.clientX;
+            pointerDownY = event.clientY;
+        });
+
+        // 2. 抬起时计算移动距离
+        window.addEventListener('pointerup', (event) => {
+            const moveX = Math.abs(event.clientX - pointerDownX);
+            const moveY = Math.abs(event.clientY - pointerDownY);
+
+            // 如果移动距离小于 5px，视为点击
+            if (moveX < 5 && moveY < 5) {
+                handleClick(event.clientX, event.clientY);
+            }
+        });
+
+        // 3. 移动时处理悬浮提示 (仅限非触摸设备，或触摸设备不按下的情况)
+        window.addEventListener('pointermove', (event) => {
+            // pointerType 'mouse' 意味着是鼠标
+            if (event.pointerType === 'mouse') {
+                handleHover(event.clientX, event.clientY);
+            }
+        });
+
+        // 详情展示函数
         function showDetails(data) {
-            // 计算神舟飞船时间 (单位：年)
             const shenzhouYears = (data.z * YEARS_PER_LY_SHENZHOU).toLocaleString();
 
             modalContent.innerHTML = `
@@ -594,7 +622,6 @@
                     ${data.desc}
                 </div>
                 
-                <!-- 神舟飞船数据卡片 -->
                 <div class="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-500/20">
                     <div class="flex items-center text-xs text-blue-300 font-bold mb-1">
                         <span class="mr-2 text-lg">🚀</span> 神舟飞船飞过去要多久？
@@ -609,14 +636,6 @@
             `;
             modal.classList.add('active');
         }
-
-        window.addEventListener('mousemove', onMouseMove, false);
-        window.addEventListener('click', onClick, false);
-        // 添加触摸支持，确保移动端点击生效
-        window.addEventListener('touchstart', (e) => {
-             // 简单的触摸点击处理，防止与 OrbitControls 冲突过于复杂
-             // 这里主要依赖 OrbitControls 处理旋转，click 事件通常也会在 touchEnd 后触发
-        }, {passive: true});
 
 
         // --- 6. 视角控制 ---
@@ -661,7 +680,6 @@
 
         window.setEarthView = function() {
             moveCamera({ x: 0, y: 0, z: -300 }, { x: 0, y: 0, z: 800 });
-            // 移动端点击按钮后自动收起面板，方便查看效果
             if (window.innerWidth < 768) {
                 controlsPanel.classList.add('collapsed');
             }
