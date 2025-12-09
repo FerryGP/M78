@@ -29,6 +29,7 @@
             opacity: 0;
             transition: opacity 0.3s;
             transform: translate(-50%, -150%);
+            z-index: 5;
         }
 
         .star-label.visible { opacity: 1; }
@@ -47,7 +48,7 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(20, 20, 30, 0.8);
+            background: rgba(20, 20, 30, 0.85);
             padding: 20px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -82,18 +83,62 @@
 
         .btn-icon { font-size: 1.2em; margin-right: 10px; }
 
+        /* 简单悬浮提示 */
         #tooltip {
             position: absolute;
             background: rgba(0, 0, 0, 0.8);
             border: 1px solid #444;
             color: #fff;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 4px;
             pointer-events: none;
             display: none;
             z-index: 20;
-            font-size: 14px;
+            font-size: 12px;
         }
+
+        /* 详情模态框 */
+        #detail-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 400px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 15px rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(12px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #detail-modal.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close-btn:hover { color: white; }
+
+        .modal-title { font-size: 24px; font-weight: bold; margin-bottom: 5px; color: #60a5fa; }
+        .modal-subtitle { font-size: 14px; color: #94a3b8; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px;}
+        .modal-body { font-size: 15px; line-height: 1.6; color: #e2e8f0; }
 
         .loading-overlay {
             position: fixed;
@@ -124,6 +169,14 @@
     <!-- 悬浮提示框 -->
     <div id="tooltip"></div>
 
+    <!-- 详情模态框 -->
+    <div id="detail-modal">
+        <button class="close-btn" onclick="closeModal()">×</button>
+        <div id="modal-content">
+            <!-- 内容将通过 JS 动态填充 -->
+        </div>
+    </div>
+
     <!-- UI 控制面板 -->
     <div id="controls-panel">
         <h2 class="text-xl font-bold mb-2 text-blue-200">视角控制器</h2>
@@ -151,6 +204,7 @@
         </div>
         
         <div class="mt-4 text-xs text-gray-500 text-center">
+            单击星体查看详情<br>
             鼠标拖拽旋转 | 滚轮缩放
         </div>
     </div>
@@ -166,22 +220,46 @@
         // Right (West) = -X
         
         const starData = [
-            // Betelgeuse: 左上角 (红色) -> X 正. 距离: 640 ly (修正)
-            { id: 'betelgeuse', name: "参宿四 (Betelgeuse)", color: 0xff4500, size: 6, x: 2, y: 4, z: 640 },
-            // Bellatrix: 右上角 (蓝色) -> X 负. 距离: 250 ly
-            { id: 'bellatrix', name: "参宿五 (Bellatrix)", color: 0xadd8e6, size: 4, x: -2, y: 4, z: 250 },
-            // Rigel: 右下角 (蓝色) -> X 负. 距离: 860 ly
-            { id: 'rigel', name: "参宿七 (Rigel)", color: 0xaaaaff, size: 7, x: -2, y: -4, z: 860 }, 
-            // Saiph: 左下角 (蓝色) -> X 正. 距离: 720 ly
-            { id: 'saiph', name: "参宿六 (Saiph)", color: 0xadd8e6, size: 4, x: 2, y: -4, z: 720 },
-            // Mintaka: 右腰带 (西) -> X 负. 距离: 915 ly (修正：原 1200)
-            { id: 'mintaka', name: "参宿三 (Mintaka)", color: 0x00bfff, size: 3.5, x: -0.5, y: 0, z: 915 },
-            // Alnilam: 中腰带 -> X 0. 距离: 1340 ly (修正：原 2000)
-            { id: 'alnilam', name: "参宿二 (Alnilam)", color: 0x00bfff, size: 3.5, x: 0, y: 0, z: 1340 },
-            // Alnitak: 左腰带 (东) -> X 正. 距离: 800 ly
-            { id: 'alnitak', name: "参宿一 (Alnitak)", color: 0x00bfff, size: 3.5, x: 0.5, y: 0, z: 800 },
-            // M78: 位于参宿一上方附近 (左侧) -> X 正. 距离: 1600 ly
-            { id: 'm78', name: "M78 星云", type: "nebula", color: 0xff00ff, size: 15, x: 0.8, y: 0.5, z: 1600 }
+            // Betelgeuse
+            { 
+                id: 'betelgeuse', name: "参宿四 (Betelgeuse)", color: 0xff4500, size: 6, x: 2, y: 4, z: 640,
+                desc: "这是一颗红超巨星，已经接近其生命的终点。如果把它放在我们太阳系中心，它的表面将延伸到木星轨道之外。它是天空中第九亮的星。"
+            },
+            // Bellatrix
+            { 
+                id: 'bellatrix', name: "参宿五 (Bellatrix)", color: 0xadd8e6, size: 4, x: -2, y: 4, z: 250,
+                desc: "也被称为“亚马逊女战士之星”。虽然在猎户座主要恒星中看起来较暗，但它是距离地球最近的猎户座主星之一，仅约250光年。"
+            },
+            // Rigel
+            { 
+                id: 'rigel', name: "参宿七 (Rigel)", color: 0xaaaaff, size: 7, x: -2, y: -4, z: 860,
+                desc: "猎户座最亮的星（通常比参宿四亮），也是全天第七亮星。它是一颗蓝超巨星，光度约为太阳的12万倍。"
+            },
+            // Saiph
+            { 
+                id: 'saiph', name: "参宿六 (Saiph)", color: 0xadd8e6, size: 4, x: 2, y: -4, z: 720,
+                desc: "位于猎户座的右膝（从地球看是左下角）。虽然距离和参宿七相仿，但由于大部分能量以紫外线形式辐射，视觉上看起来不如参宿七明亮。"
+            },
+            // Mintaka (修正：915光年)
+            { 
+                id: 'mintaka', name: "参宿三 (Mintaka)", color: 0x00bfff, size: 3.5, x: -0.5, y: 0, z: 915,
+                desc: "位于猎户座腰带的最右侧（西）。实际上是一个复杂的多星系统。**距离地球约915光年**，比最左侧的参宿一要远一些。"
+            },
+            // Alnilam (修正：1340光年)
+            { 
+                id: 'alnilam', name: "参宿二 (Alnilam)", color: 0x00bfff, size: 3.5, x: 0, y: 0, z: 1340,
+                desc: "位于猎户座腰带的正中央。它是腰带三星中距离我们最远的（1340光年），但因为它极度明亮，看起来与其他两颗星亮度相当。"
+            },
+            // Alnitak (修正：800光年)
+            { 
+                id: 'alnitak', name: "参宿一 (Alnitak)", color: 0x00bfff, size: 3.5, x: 0.5, y: 0, z: 800,
+                desc: "位于猎户座腰带的最左侧（东）。**距离地球约800光年**。著名的马头星云就位于这颗星的附近。"
+            },
+            // M78
+            { 
+                id: 'm78', name: "M78 星云", type: "nebula", color: 0xff00ff, size: 15, x: 0.8, y: 0.5, z: 1600,
+                desc: "这是一个反射星云，意味着它通过反射附近恒星的光线发光。在演示中，我们将其距离夸张化展示以突出深度，实际距离约1600光年。"
+            }
         ];
 
         // 修正数据格式并应用缩放
@@ -193,15 +271,13 @@
         }));
 
         // 连线定义 (索引对应上述数组)
-        // 0: Betelgeuse (左), 1: Bellatrix (右), 2: Rigel (右), 3: Saiph (左)
-        // 4: Mintaka (右/参宿三), 5: Alnilam (中), 6: Alnitak (左/参宿一)
         const connections = [
-            [0, 6], // 参宿四(左) -> 参宿一(左) (肩 -> 腰)
-            [1, 4], // 参宿五(右) -> 参宿三(右) (肩 -> 腰)
-            [0, 1], // 参宿四 -> 参宿五 (肩 -> 肩)
-            [3, 6], // 参宿六(左) -> 参宿一(左) (脚 -> 腰)
-            [2, 4], // 参宿七(右) -> 参宿三(右) (脚 -> 腰)
-            [3, 2], // 参宿六 -> 参宿七 (脚 -> 脚)
+            [0, 6], // 参宿四 -> 参宿一
+            [1, 4], // 参宿五 -> 参宿三
+            [0, 1], // 参宿四 -> 参宿五
+            [3, 6], // 参宿六 -> 参宿一
+            [2, 4], // 参宿七 -> 参宿三
+            [3, 2], // 参宿六 -> 参宿七
             [4, 5], // 腰带 右-中
             [5, 6]  // 腰带 中-左
         ];
@@ -222,14 +298,14 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // --- 3. 辅助函数：生成纹理 (避免外部图片依赖) ---
+        // --- 3. 辅助函数：生成纹理 ---
         function createGlowTexture(colorStr) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
             gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            gradient.addColorStop(0.2, colorStr); // e.g. 'rgba(0, 100, 255, 0.5)'
+            gradient.addColorStop(0.2, colorStr); 
             gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, 64, 64);
@@ -240,7 +316,6 @@
             const canvas = document.createElement('canvas');
             canvas.width = 128; canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            // 绘制不规则云雾状
             const grad = ctx.createRadialGradient(64, 64, 10, 64, 64, 60);
             grad.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
             grad.addColorStop(0.6, 'rgba(200, 0, 200, 0.2)');
@@ -251,26 +326,21 @@
         }
 
         // --- 4. 场景构建 ---
-
-        // 全局对象引用
         const starMeshes = [];
         const labelElements = [];
         let m78Mesh = null;
         let m78Glow = null;
 
-        // 4.1 创建星星和 M78
         stars.forEach((star, index) => {
             const geometry = new THREE.SphereGeometry(star.size, 32, 32);
             const material = new THREE.MeshBasicMaterial({ color: star.color });
             
-            // 核心球体
             const mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(star.realX, star.realY, star.realZ);
-            mesh.userData = { ...star }; // 存储数据用于交互
+            mesh.userData = { ...star }; // 存储数据
             scene.add(mesh);
             starMeshes.push(mesh);
 
-            // 光晕 (Sprite)
             const spriteMaterial = new THREE.SpriteMaterial({ 
                 map: createGlowTexture(star.type === 'nebula' ? 'rgba(255,0,255,0.6)' : 'rgba(100,150,255,0.6)'),
                 color: star.color, 
@@ -283,10 +353,8 @@
             sprite.scale.set(scale, scale, 1);
             mesh.add(sprite);
 
-            // M78 特殊处理：增加体积雾感
             if (star.type === 'nebula') {
                 m78Mesh = mesh;
-                // 添加额外的粒子层模拟雾气
                 const nebulaGeo = new THREE.BufferGeometry();
                 const count = 30;
                 const positions = new Float32Array(count * 3);
@@ -306,12 +374,11 @@
                 });
                 const particles = new THREE.Points(nebulaGeo, nebulaMat);
                 mesh.add(particles);
-                m78Glow = particles; // 引用用于动画
+                m78Glow = particles;
             }
 
-            // 视线 (从地球原点到星星的虚线)
             const lineGeo = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(0, 0, 0), // 地球
+                new THREE.Vector3(0, 0, 0),
                 new THREE.Vector3(star.realX, star.realY, star.realZ)
             ]);
             const lineMat = new THREE.LineDashedMaterial({
@@ -322,10 +389,9 @@
                 transparent: true
             });
             const sightLine = new THREE.Line(lineGeo, lineMat);
-            sightLine.computeLineDistances(); // 必须调用以显示虚线
+            sightLine.computeLineDistances();
             scene.add(sightLine);
 
-            // 创建 DOM 标签
             const labelDiv = document.createElement('div');
             labelDiv.className = `star-label ${star.type === 'nebula' ? 'm78-highlight' : ''}`;
             labelDiv.innerHTML = `<div class="label-name">${star.name}</div><div class="label-dist">${star.z} 光年</div>`;
@@ -333,7 +399,6 @@
             labelElements.push({ div: labelDiv, mesh: mesh });
         });
 
-        // 4.2 创建星座连线
         connections.forEach(pair => {
             const start = stars[pair[0]];
             const end = stars[pair[1]];
@@ -347,22 +412,18 @@
             scene.add(line);
         });
 
-        // 4.3 地球标记 (原点)
         const earthGeo = new THREE.SphereGeometry(2, 16, 16);
         const earthMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
         const earthMesh = new THREE.Mesh(earthGeo, earthMat);
         scene.add(earthMesh);
         
-        // 地球标签
         const earthLabel = document.createElement('div');
         earthLabel.className = 'star-label text-green-400 font-bold';
         earthLabel.textContent = "地球 (原点)";
         document.body.appendChild(earthLabel);
         labelElements.push({ div: earthLabel, mesh: earthMesh });
 
-        // 4.4 距离标尺 (Z轴)
         const axisGroup = new THREE.Group();
-        // 增加轴长度以容纳更远的星体 (如 Alnilam 2000 ly)
         const axisLength = 2200;
         const axisGeo = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, -100, 0),
@@ -372,7 +433,6 @@
         const axisLine = new THREE.Line(axisGeo, axisMat);
         axisGroup.add(axisLine);
 
-        // 标尺刻度
         for(let z=0; z<=axisLength; z+=400) {
             const tickGeo = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(-10, -100, z),
@@ -380,62 +440,86 @@
             ]);
             const tickLine = new THREE.Line(tickGeo, axisMat);
             axisGroup.add(tickLine);
-
-            // 3D 文本太复杂，这里简化处理，我们主要靠交互标签显示距离
         }
         scene.add(axisGroup);
 
 
-        // --- 5. 交互逻辑 ---
-
-        // 射线检测
+        // --- 5. 交互逻辑 (悬浮 + 点击) ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const tooltip = document.getElementById('tooltip');
+        const modal = document.getElementById('detail-modal');
+        const modalContent = document.getElementById('modal-content');
 
+        // 关闭模态框
+        window.closeModal = function() {
+            modal.classList.remove('active');
+        };
+
+        // 鼠标移动检测
         function onMouseMove(event) {
-            // 计算鼠标位置
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-            // 射线投射
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(starMeshes);
 
             if (intersects.length > 0) {
                 const data = intersects[0].object.userData;
+                // 显示简易悬浮提示
                 tooltip.style.display = 'block';
                 tooltip.style.left = event.clientX + 15 + 'px';
                 tooltip.style.top = event.clientY + 15 + 'px';
-                tooltip.innerHTML = `
-                    <div class="font-bold text-blue-300">${data.name}</div>
-                    <div>距离地球: <span class="text-white">${data.z}</span> 光年</div>
-                    <div class="text-xs text-gray-400 mt-1">点击查看详情</div>
-                `;
+                tooltip.innerHTML = `<div>${data.name}</div><div style="color:#aaa">点击查看详情</div>`;
                 document.body.style.cursor = 'pointer';
             } else {
                 tooltip.style.display = 'none';
                 document.body.style.cursor = 'default';
             }
         }
-        window.addEventListener('mousemove', onMouseMove, false);
+        
+        // 鼠标点击检测 (新增)
+        function onClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-        // 更新标签位置
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(starMeshes);
+
+            if (intersects.length > 0) {
+                const data = intersects[0].object.userData;
+                showDetails(data);
+            }
+        }
+
+        function showDetails(data) {
+            modalContent.innerHTML = `
+                <div class="modal-title">${data.name}</div>
+                <div class="modal-subtitle">距离地球: <span style="color:white">${data.z}</span> 光年</div>
+                <div class="modal-body">
+                    ${data.desc}
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+
+        window.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('click', onClick, false);
+
+
+        // --- 6. 视角控制 ---
         function updateLabels() {
             labelElements.forEach(item => {
                 const vector = item.mesh.position.clone();
                 vector.project(camera);
 
-                // 检查是否在视野内
-                if (vector.z > 1) { // 背后
+                if (vector.z > 1) { 
                     item.div.classList.remove('visible');
                     return;
                 }
-
                 const x = (vector.x * .5 + .5) * window.innerWidth;
                 const y = (-(vector.y * .5) + .5) * window.innerHeight;
 
-                // 简单的视锥剔除，避免显示屏幕外的标签
                 if(x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) {
                     item.div.classList.remove('visible');
                 } else {
@@ -446,14 +530,10 @@
             });
         }
 
-        // --- 6. 视角控制 ---
-
-        // 初始视角 (稍微偏离地球视角，展示3D感)
         camera.position.set(-200, 100, 1000); 
         controls.target.set(0, 0, 800);
         controls.update();
 
-        // 动画移动相机
         function moveCamera(pos, target) {
             new TWEEN.Tween(camera.position)
                 .to(pos, 2000)
@@ -468,15 +548,10 @@
         }
 
         window.setEarthView = function() {
-            // 地球视角：位于原点后方，看向 Z 轴正向
-            // 此时星空看起来像平面
-            // 为了看到所有星星，我们需要稍微后退一点，因为我们的 XY 缩放了
             moveCamera({ x: 0, y: 0, z: -300 }, { x: 0, y: 0, z: 800 });
         };
 
         window.setGodView = function() {
-            // 上帝视角：侧面，展示深度
-            // x: 2000, z: 800 (中间位置)
             moveCamera({ x: 2000, y: 500, z: 800 }, { x: 0, y: 0, z: 800 });
         };
 
@@ -487,39 +562,28 @@
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
 
-            // M78 呼吸特效
             if (m78Glow) {
                 const scale = 1 + Math.sin(time * 2) * 0.1;
                 m78Glow.scale.set(scale, scale, scale);
-                m78Mesh.rotation.z = time * 0.1; // 缓慢旋转
+                m78Mesh.rotation.z = time * 0.1; 
             }
 
-            // 更新动画库
             TWEEN.update();
-            
-            // 更新控制器
             controls.update();
-
-            // 更新 HTML 标签位置
             updateLabels();
-
             renderer.render(scene, camera);
         }
 
-        // 窗口大小调整
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // 启动
         setTimeout(() => {
             document.getElementById('loading').style.opacity = 0;
             setTimeout(() => document.getElementById('loading').style.display = 'none', 1000);
             animate();
-            
-            // 初始演示：先进入 Earth View，然后稍微转一下
             setEarthView();
         }, 1000);
 
