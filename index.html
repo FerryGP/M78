@@ -165,8 +165,8 @@
         const starData = [
             { id: 'betelgeuse', name: "参宿四 (Betelgeuse)", color: 0xff4500, size: 6, x: -2, y: 4, z: 640 },
             { id: 'bellatrix', name: "参宿五 (Bellatrix)", color: 0xadd8e6, size: 4, x: 2, y: 4, z: 250 },
-            { id: 'rigel', name: "参宿七 (Rigel)", color: 0xaaaaff, size: 7, x: 2, -4, z: 860 }, // PRD Note: PRD wrote (2, -4)
-            // Fix coordinates mapping from PRD table
+            // 修复：参宿七这里之前缺少了 y: 键名，导致语法错误
+            { id: 'rigel', name: "参宿七 (Rigel)", color: 0xaaaaff, size: 7, x: 2, y: -4, z: 860 }, 
             { id: 'saiph', name: "参宿六 (Saiph)", color: 0xadd8e6, size: 4, x: -2, y: -4, z: 720 },
             { id: 'mintaka', name: "腰带一 (Mintaka)", color: 0x00bfff, size: 3.5, x: -0.5, y: 0, z: 800 },
             { id: 'alnilam', name: "腰带二 (Alnilam)", color: 0x00bfff, size: 3.5, x: 0, y: 0, z: 1340 },
