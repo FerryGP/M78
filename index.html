@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M78星云与猎户座：3D视错觉探究 (V7.0)</title>
-    <!-- 引入 Plotly.js 库 -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #000; color: white; font-family: 'Arial', sans-serif; overflow: hidden; }
@@ -29,10 +28,10 @@
 <body>
 
     <div class="instruction">
-        <h3>M78星云探究演示 (V7 终极校准)</h3>
-        <p>1. <b>视角：</b>北京冬季面朝正南观测。</p>
-        <p>2. <b>腰带：</b>左低 (参宿一) -> 右高 (参宿三)。</p>
-        <p>3. <b>M78：</b>位于腰带最左端 (参宿一) 的左上方。</p>
+        <h3>M78星云探究演示 (V7 标准版)</h3>
+        <p>1. <b>左边 (东)：</b>参宿四(上)、参宿六(下)、M78。</p>
+        <p>2. <b>右边 (西)：</b>参宿五(上)、参宿七(下)。</p>
+        <p>3. <b>对角线：</b>左上红星 <-> 右下最亮蓝星。</p>
         <div class="legend-box">
             <div class="legend-item"><span class="dot" style="background:#FF4500"></span>红超巨星 (参宿四)</div>
             <div class="legend-item"><span class="dot" style="background:#1E90FF"></span>最亮蓝星 (参宿七)</div>
@@ -66,17 +65,17 @@
             ["参宿七 (Rigel)", 2, -4, 860, "#1E90FF", 28, "star"],       
             
             // --- 腰带三星 (左低右高) ---
-            // 参宿一 (Alnitak): 左边 (东), 位置最低. 旁边有M78
-            ["参宿一 (Alnitak)", -0.8, -0.4, 800, "#87CEEB", 12, "star"], 
-            // 参宿二 (Alnilam): 中间, 距离最远
+            // 参宿一 (Alnitak): 左边, 较低
+            ["参宿一 (Alnitak)", -0.8, -0.2, 800, "#87CEEB", 12, "star"], 
+            // 参宿二 (Alnilam): 中间, 最远
             ["参宿二 (Alnilam)", 0, 0, 2000, "#87CEEB", 12, "star"],      
-            // 参宿三 (Mintaka): 右边 (西), 位置最高
-            ["参宿三 (Mintaka)", 0.8, 0.4, 1200, "#87CEEB", 12, "star"]   
+            // 参宿三 (Mintaka): 右边, 较高
+            ["参宿三 (Mintaka)", 0.8, 0.2, 1200, "#87CEEB", 12, "star"]   
         ];
 
         // M78 星云位置 
-        // 位于 参宿一(左腰) 的 左上方 (赤经更大/更东，赤纬更高/更北)
-        const m78Pos = {x: -1.4, y: 0.2, z: 1600};
+        // 位于 参宿一(左腰) 的 左上方
+        const m78Pos = {x: -1.4, y: 1.0, z: 1600};
 
         // ==========================================
         // 2. 构建 Plotly 数据
@@ -223,7 +222,7 @@
                             "scene.camera.eye": { x: 0.001, y: 0.001, z: -0.1 },
                             "scene.camera.up": { x: 0, y: 1, z: 0 },
                             "scene.camera.center": { x: 0, y: 0, z: 0 },
-                            "title.text": "北京观测：腰带左低右高，M78在最左侧"
+                            "title.text": "北京观测：左上参宿四(红)，右下参宿七(蓝)"
                         }]
                     },
                     {
