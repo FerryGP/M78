@@ -156,36 +156,31 @@
     </div>
 
     <script>
-        // --- 1. 数据配置 (基于 PRD) ---
-        // 为了视觉效果，我们对 X 和 Y 坐标应用一个缩放因子 (XY_SCALE)，
-        // 否则在巨大的 Z 轴距离下，星星会挤在一起。
-        // 这模拟了我们将视场稍微放大的效果。
+        // --- 1. 数据配置 (基于用户提供的最新天文数据校准) ---
+        // 视觉缩放因子，保持星图的相对形状
         const XY_SCALE = 30; 
         
         // 坐标修正说明：
-        // 摄像机从 -Z 位置看向 +Z 位置时，Canvas 右侧为 -X，左侧为 +X。
-        // 为了匹配北半球观看南天的体验（左东右西）：
-        // - 参宿四（左肩/东）：需要 Positive X
-        // - 参宿五（右肩/西）：需要 Negative X
-        // - 参宿一（左腰带/东）：需要 Positive X
-        // - 参宿三（右腰带/西）：需要 Negative X
+        // 摄像机从 -Z 位置看向 +Z 位置 (地球视角)
+        // Left (East) = +X
+        // Right (West) = -X
         
         const starData = [
-            // Betelgeuse: 左上角 (红色) -> X 正
+            // Betelgeuse: 左上角 (红色) -> X 正. 距离: 640 ly (修正)
             { id: 'betelgeuse', name: "参宿四 (Betelgeuse)", color: 0xff4500, size: 6, x: 2, y: 4, z: 640 },
-            // Bellatrix: 右上角 (蓝色) -> X 负
+            // Bellatrix: 右上角 (蓝色) -> X 负. 距离: 250 ly
             { id: 'bellatrix', name: "参宿五 (Bellatrix)", color: 0xadd8e6, size: 4, x: -2, y: 4, z: 250 },
-            // Rigel: 右下角 (蓝色) -> X 负
+            // Rigel: 右下角 (蓝色) -> X 负. 距离: 860 ly
             { id: 'rigel', name: "参宿七 (Rigel)", color: 0xaaaaff, size: 7, x: -2, y: -4, z: 860 }, 
-            // Saiph: 左下角 (蓝色) -> X 正
+            // Saiph: 左下角 (蓝色) -> X 正. 距离: 720 ly
             { id: 'saiph', name: "参宿六 (Saiph)", color: 0xadd8e6, size: 4, x: 2, y: -4, z: 720 },
-            // Mintaka: 右腰带 (西/右) -> X 负. 修正名称为 参宿三
-            { id: 'mintaka', name: "参宿三 (Mintaka)", color: 0x00bfff, size: 3.5, x: -0.5, y: 0, z: 800 },
-            // Alnilam: 中腰带 -> X 0. 修正名称为 参宿二
+            // Mintaka: 右腰带 (西) -> X 负. 距离: 915 ly (修正：原 1200)
+            { id: 'mintaka', name: "参宿三 (Mintaka)", color: 0x00bfff, size: 3.5, x: -0.5, y: 0, z: 915 },
+            // Alnilam: 中腰带 -> X 0. 距离: 1340 ly (修正：原 2000)
             { id: 'alnilam', name: "参宿二 (Alnilam)", color: 0x00bfff, size: 3.5, x: 0, y: 0, z: 1340 },
-            // Alnitak: 左腰带 (东/左) -> X 正. 修正名称为 参宿一
-            { id: 'alnitak', name: "参宿一 (Alnitak)", color: 0x00bfff, size: 3.5, x: 0.5, y: 0, z: 915 },
-            // M78: 位于参宿一上方附近 (左侧) -> X 正
+            // Alnitak: 左腰带 (东) -> X 正. 距离: 800 ly
+            { id: 'alnitak', name: "参宿一 (Alnitak)", color: 0x00bfff, size: 3.5, x: 0.5, y: 0, z: 800 },
+            // M78: 位于参宿一上方附近 (左侧) -> X 正. 距离: 1600 ly
             { id: 'm78', name: "M78 星云", type: "nebula", color: 0xff00ff, size: 15, x: 0.8, y: 0.5, z: 1600 }
         ];
 
@@ -367,7 +362,8 @@
 
         // 4.4 距离标尺 (Z轴)
         const axisGroup = new THREE.Group();
-        const axisLength = 1800;
+        // 增加轴长度以容纳更远的星体 (如 Alnilam 2000 ly)
+        const axisLength = 2200;
         const axisGeo = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, -100, 0),
             new THREE.Vector3(0, -100, axisLength)
