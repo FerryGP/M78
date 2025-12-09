@@ -1,9 +1,15 @@
+<!--
+ * 项目名称：M78星云与猎户座 3D 可视化演示
+ * 说明：该模型仅用于参加第二十六届金鹏科技论坛
+ * 作者：三年级7班 王原驰
+ * 版权所有：王原驰
+-->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M78星云与猎户座 3D 可视化演示</title>
+    <title>M78星云与猎户座 3D 可视化演示 - 王原驰</title>
     <!-- 引入 Tailwind CSS 进行 UI 样式设计 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Three.js -->
@@ -48,7 +54,7 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(20, 20, 30, 0.85);
+            background: rgba(20, 20, 30, 0.9);
             padding: 20px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -56,6 +62,7 @@
             color: white;
             z-index: 10;
             max-width: 300px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         .btn {
@@ -194,6 +201,10 @@
 
         <div class="mt-4 pt-4 border-t border-gray-700">
             <div class="flex items-center text-xs text-gray-300 mb-2">
+                <div class="w-3 h-3 rounded-full bg-green-500 mr-2 shadow-[0_0_5px_#22c55e]"></div>
+                地球 (原点)
+            </div>
+            <div class="flex items-center text-xs text-gray-300 mb-2">
                 <div class="w-3 h-3 rounded-full bg-blue-500 mr-2 shadow-[0_0_5px_#3b82f6]"></div>
                 恒星 (如参宿四)
             </div>
@@ -203,9 +214,16 @@
             </div>
         </div>
         
-        <div class="mt-4 text-xs text-gray-500 text-center">
+        <div class="mt-4 text-xs text-gray-500 text-center border-b border-gray-700 pb-4 mb-4">
             单击星体查看详情<br>
             鼠标拖拽旋转 | 滚轮缩放
+        </div>
+
+        <!-- 版权说明 -->
+        <div class="text-[10px] text-gray-400 text-center leading-relaxed">
+            该模型仅用于参加<br>
+            <span class="text-yellow-500 font-bold">第二十六届金鹏科技论坛</span><br>
+            三年级7班 王原驰 版权所有
         </div>
     </div>
 
@@ -214,6 +232,12 @@
         // 视觉缩放因子，保持星图的相对形状
         const XY_SCALE = 30; 
         
+        // 神舟飞船速度计算常数
+        // 1 光年 ≈ 9.46 万亿公里
+        // 神舟飞船速度（取第一宇宙速度） ≈ 7.9 km/s
+        // 计算结果：1 光年大约需要 3.8 万年
+        const YEARS_PER_LY_SHENZHOU = 38000;
+
         // 坐标修正说明：
         // 摄像机从 -Z 位置看向 +Z 位置 (地球视角)
         // Left (East) = +X
@@ -493,11 +517,28 @@
         }
 
         function showDetails(data) {
+            // 计算神舟飞船时间 (单位：年)
+            // 使用 toLocaleString 让数字更易读 (如 34,200,000)
+            const shenzhouYears = (data.z * YEARS_PER_LY_SHENZHOU).toLocaleString();
+
             modalContent.innerHTML = `
                 <div class="modal-title">${data.name}</div>
                 <div class="modal-subtitle">距离地球: <span style="color:white">${data.z}</span> 光年</div>
                 <div class="modal-body">
                     ${data.desc}
+                </div>
+                
+                <!-- 神舟飞船数据卡片 -->
+                <div class="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-500/20">
+                    <div class="flex items-center text-xs text-blue-300 font-bold mb-1">
+                        <span class="mr-2 text-lg">🚀</span> 神舟飞船飞过去要多久？
+                    </div>
+                    <div class="text-sm text-white pl-7">
+                        约 <span class="font-mono text-yellow-400 text-lg font-bold">${shenzhouYears}</span> 年
+                    </div>
+                    <div class="text-[10px] text-gray-500 pl-7 mt-1">
+                        (假设以第一宇宙速度 7.9km/s 不间断飞行)
+                    </div>
                 </div>
             `;
             modal.classList.add('active');
